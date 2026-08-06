@@ -1,0 +1,10 @@
+expenses.db
+expenses.db-wal
+expenses.db-shm
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+config.json
+.DS_Store

@@ -1,0 +1,20 @@
+{
+  "telegram_token": "YOUR_BOT_TOKEN_HERE",
+  "dashboard_url": "https://your-project.vercel.app",
+  "github_sync": true,
+  "currency": "₹",
+  "monthlyBudget": 50000,
+  "budgets": {
+    "travel": 5000,
+    "food": 8000,
+    "groceries": 6000,
+    "clothes": 3000,
+    "rent": 15000,
+    "bills": 4000,
+    "luxuries": 3000,
+    "investments": 10000,
+    "health": 2000,
+    "education": 2000,
+    "other": 2000
+  }
+}

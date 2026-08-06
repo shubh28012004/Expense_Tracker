@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EXPENSE LEDGER</title>
+<script src="data.js"></script>
+<style>
+  :root {
+    --bg: #0c0e10;
+    --bg-elev: #12151a;
+    --bg-soft: #181c22;
+    --line: #2a3038;
+    --line-soft: #1e242c;
+    --ink: #d6dce4;
+    --muted: #7a8494;
+    --dim: #4a5564;
+    --amber: #e8a838;
+    --amber-dim: #a37420;
+    --green: #3ecf8e;
+    --green-dim: #1f6b4a;
+    --red: #e85d5d;
+    --red-dim: #7a2e2e;
+    --cyan: #4eb8d9;
+    --mono: "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 14px; }
+  body {
+    font-family: var(--sans);
+    background:
+      radial-gradient(ellipse 90% 50% at 10% -10%, #1a2218 0%, transparent 50%),
+      radial-gradient(ellipse 70% 40% at 100% 0%, #1a1520 0%, transparent 45%),
+      var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.45;
+  }
+
+  /* scanline atmosphere */
+  body::before {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    z-index: 9999;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  /* ── Header ── */
+  header.top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+
+  .brand {
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+  }
+  .brand .mark {
+    color: var(--amber);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .brand h1 {
+    font-size: 1.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+  .brand h1 span { color: var(--amber); }
+
+  .month-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+  }
+  .month-ctrl button {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 1rem;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .month-ctrl button:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .month-ctrl .label {
+    min-width: 140px;
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--amber);
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .full { grid-column: 1 / -1; }
+
+  section.panel {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    padding: 18px 20px 20px;
+    position: relative;
+  }
+  section.panel::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--amber), transparent 60%);
+    opacity: 0.7;
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    font-family: var(--mono);
+  }
+  .panel-head h2 {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel-head .sub {
+    font-size: 0.7rem;
+    color: var(--dim);
+  }
+
+  /* ── Hero spend ── */
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 600px) {
+    .hero-metrics { grid-template-columns: 1fr; }
+  }
+  .metric .lbl {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 4px;
+  }
+  .metric .val {
+    font-family: var(--mono);
+    font-size: 1.55rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .metric .val.warn { color: var(--red); }
+  .metric .val.ok { color: var(--green); }
+  .metric .hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+
+  .burn-track {
+    height: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line-soft);
+    position: relative;
+    overflow: hidden;
+  }
+  .burn-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-dim), var(--green));
+    transition: width 0.4s ease;
+  }
+  .burn-fill.over {
+    background: linear-gradient(90deg, var(--red-dim), var(--red));
+  }
+  .burn-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  /* ── Donut + ledger ── */
+  .split {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+    align-items: center;
+  }
+  @media (max-width: 600px) {
+    .split { grid-template-columns: 1fr; justify-items: center; }
+  }
+  .donut-wrap { position: relative; width: 160px; height: 160px; }
+  .donut-wrap svg { width: 100%; height: 100%; }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-family: var(--mono);
+  }
+  .donut-center .big {
+    font-size: 0.95rem;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .donut-center .sm {
+    font-size: 0.6rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ledger { width: 100%; }
+  .ledger-row {
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+  }
+  .ledger-row:last-child { border-bottom: none; }
+  .swatch {
+    width: 8px; height: 8px;
+    border-radius: 1px;
+  }
+  .ledger-row .cat { color: var(--ink); text-transform: capitalize; }
+  .ledger-row .amt { color: var(--muted); text-align: right; }
+  .ledger-row .pct { color: var(--dim); text-align: right; min-width: 42px; }
+
+  /* ── Charts ── */
+  .chart-box { width: 100%; overflow: hidden; }
+  .chart-box svg { width: 100%; height: auto; display: block; }
+
+  /* ── Budget bars ── */
+  .budget-list { display: flex; flex-direction: column; gap: 10px; }
+  .budget-item .row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+  }
+  .budget-item .name { text-transform: capitalize; color: var(--ink); }
+  .budget-item .nums { color: var(--muted); }
+  .budget-item .nums.over { color: var(--red); }
+  .b-track {
+    height: 6px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line-soft);
+  }
+  .b-fill {
+    height: 100%;
+    background: var(--cyan);
+    max-width: 100%;
+  }
+  .b-fill.over { background: var(--red); }
+
+  /* ── Activity ── */
+  .activity { font-family: var(--mono); font-size: 0.78rem; }
+  .act-row {
+    display: grid;
+    grid-template-columns: 88px 90px 1fr auto;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  @media (max-width: 600px) {
+    .act-row { grid-template-columns: 72px 1fr auto; }
+    .act-row .cat { display: none; }
+  }
+  .act-row:last-child { border-bottom: none; }
+  .act-row .d { color: var(--dim); }
+  .act-row .cat { color: var(--amber-dim); text-transform: capitalize; }
+  .act-row .note { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act-row .amt { color: var(--muted); text-align: right; }
+  .act-row .amt.income { color: var(--green); }
+  .act-row .amt.loan { color: var(--cyan); }
+
+  .loan-list { font-family: var(--mono); font-size: 0.78rem; }
+  .loan-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .loan-row:last-child { border-bottom: none; }
+  .loan-row .who { color: var(--ink); }
+  .loan-row .amt-rec { color: var(--green); text-align: right; }
+  .loan-row .amt-pay { color: var(--amber); text-align: right; }
+  .loan-totals {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* ── Insights ── */
+  .insights { display: flex; flex-direction: column; gap: 10px; }
+  .insight {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 10px 12px;
+    background: var(--bg-soft);
+    border-left: 2px solid var(--amber);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .insight .tag {
+    color: var(--amber);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .empty {
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer .sample-badge {
+    color: var(--amber);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">// local · offline · yours</div>
+      <h1>EXPENSE<span>_</span>LEDGER</h1>
+    </div>
+    <div class="month-ctrl">
+      <button type="button" id="prevMonth" aria-label="Previous month">‹</button>
+      <div class="label" id="monthLabel">—</div>
+      <button type="button" id="nextMonth" aria-label="Next month">›</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Hero -->
+    <section class="panel full" id="heroPanel">
+      <div class="panel-head">
+        <h2>Month pulse</h2>
+        <span class="sub" id="paceSub"></span>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric">
+          <div class="lbl">Spent / Budget</div>
+          <div class="val" id="spentVal">—</div>
+          <div class="hint" id="spentHint"></div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Remaining</div>
+          <div class="val" id="remainVal">—</div>
+          <div class="hint" id="remainHint"></div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Projected EOM</div>
+          <div class="val" id="projVal">—</div>
+          <div class="hint" id="projHint"></div>
+        </div>
+      </div>
+      <div class="burn-track"><div class="burn-fill" id="burnFill"></div></div>
+      <div class="burn-meta">
+        <span id="burnLeft">0%</span>
+        <span id="burnRight">budget</span>
+      </div>
+    </section>
+
+    <!-- Where money goes -->
+    <section class="panel full">
+      <div class="panel-head">
+        <h2>Where the money goes</h2>
+        <span class="sub">expenses only</span>
+      </div>
+      <div class="split">
+        <div class="donut-wrap">
+          <svg id="donutSvg" viewBox="0 0 160 160"></svg>
+          <div class="donut-center">
+            <div class="big" id="donutTotal">—</div>
+            <div class="sm">total</div>
+          </div>
+        </div>
+        <div class="ledger" id="catLedger"></div>
+      </div>
+    </section>
+
+    <!-- Daily burn -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Daily burn</h2>
+        <span class="sub">cumulative vs even pace</span>
+      </div>
+      <div class="chart-box" id="dailyChart"></div>
+    </section>
+
+    <!-- MoM -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Month over month</h2>
+        <span class="sub">last 6 months</span>
+      </div>
+      <div class="chart-box" id="momChart"></div>
+    </section>
+
+    <!-- Budgets -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Budgets &amp; alerts</h2>
+        <span class="sub">red = over cap</span>
+      </div>
+      <div class="budget-list" id="budgetList"></div>
+    </section>
+
+    <!-- Friend loans -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Friend ledger</h2>
+        <span class="sub">loans · not in budget</span>
+      </div>
+      <div class="loan-list" id="loanList"></div>
+    </section>
+
+    <!-- Recent -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Recent activity</h2>
+        <span class="sub">latest 12</span>
+      </div>
+      <div class="activity" id="activity"></div>
+    </section>
+
+    <!-- Insights -->
+    <section class="panel full">
+      <div class="panel-head">
+        <h2>Spending insights</h2>
+        <span class="sub">auto-generated</span>
+      </div>
+      <div class="insights" id="insights"></div>
+    </section>
+  </div>
+
+  <footer>
+    <span>DATA SOURCE · SQLite → data.js · no network</span>
+    <span id="footerNote"></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── Palette for categories (terminal-ish) ── */
+  var CAT_COLORS = {
+    travel: "#4eb8d9",
+    food: "#e8a838",
+    groceries: "#3ecf8e",
+    clothes: "#d4a574",
+    rent: "#e85d5d",
+    bills: "#7a8494",
+    luxuries: "#f0c14a",
+    investments: "#3ecf8e",
+    health: "#e87a7a",
+    education: "#6bb3f0",
+    other: "#5a6574",
+    loans: "#4eb8d9"
+  };
+
+  var SAMPLE = [
+    { id: 1, date: "2026-07-02", category: "rent", amount: 15000, note: "house rent", type: "expense" },
+    { id: 2, date: "2026-07-03", category: "food", amount: 420, note: "swiggy dinner", type: "expense" },
+    { id: 3, date: "2026-07-05", category: "travel", amount: 500, note: "ola", type: "expense" },
+    { id: 4, date: "2026-07-07", category: "groceries", amount: 1250, note: "blinkit", type: "expense" },
+    { id: 5, date: "2026-07-08", category: "luxuries", amount: 649, note: "netflix", type: "expense" },
+    { id: 6, date: "2026-07-10", category: "food", amount: 380, note: "zomato lunch", type: "expense" },
+    { id: 7, date: "2026-07-12", category: "clothes", amount: 1500, note: "myntra shirt", type: "expense" },
+    { id: 8, date: "2026-07-14", category: "travel", amount: 320, note: "uber", type: "expense" },
+    { id: 9, date: "2026-07-15", category: "bills", amount: 899, note: "jio recharge", type: "expense" },
+    { id: 10, date: "2026-07-18", category: "food", amount: 560, note: "swiggy", type: "expense" },
+    { id: 11, date: "2026-07-20", category: "investments", amount: 5000, note: "sip groww", type: "expense" },
+    { id: 12, date: "2026-07-22", category: "health", amount: 450, note: "pharmacy", type: "expense" },
+    { id: 13, date: "2026-07-25", category: "food", amount: 290, note: "chai coffee", type: "expense" },
+    { id: 14, date: "2026-07-28", category: "travel", amount: 180, note: "metro", type: "expense" },
+    { id: 15, date: "2026-07-01", category: "other", amount: 75000, note: "salary", type: "income" },
+    { id: 16, date: "2026-06-02", category: "rent", amount: 15000, note: "house rent", type: "expense" },
+    { id: 17, date: "2026-06-05", category: "food", amount: 2100, note: "swiggy zomato", type: "expense" },
+    { id: 18, date: "2026-06-10", category: "travel", amount: 1800, note: "uber ola", type: "expense" },
+    { id: 19, date: "2026-06-15", category: "groceries", amount: 3200, note: "bigbasket", type: "expense" },
+    { id: 20, date: "2026-06-20", category: "luxuries", amount: 1200, note: "movie gym", type: "expense" },
+    { id: 21, date: "2026-06-01", category: "other", amount: 75000, note: "salary", type: "income" },
+    { id: 22, date: "2026-05-03", category: "rent", amount: 15000, note: "rent", type: "expense" },
+    { id: 23, date: "2026-05-12", category: "food", amount: 4500, note: "dining out", type: "expense" },
+    { id: 24, date: "2026-05-18", category: "clothes", amount: 2800, note: "ajio", type: "expense" },
+    { id: 25, date: "2026-04-05", category: "rent", amount: 15000, note: "rent", type: "expense" },
+    { id: 26, date: "2026-04-20", category: "bills", amount: 3500, note: "electricity wifi", type: "expense" },
+    { id: 27, date: "2026-03-08", category: "travel", amount: 4200, note: "flight", type: "expense" },
+    { id: 28, date: "2026-03-15", category: "food", amount: 3100, note: "food", type: "expense" },
+    { id: 29, date: "2026-02-10", category: "groceries", amount: 2800, note: "groceries", type: "expense" },
+    { id: 30, date: "2026-02-22", category: "luxuries", amount: 900, note: "spotify", type: "expense" }
+  ];
+
+  var SAMPLE_CONFIG = {
+    currency: "₹",
+    monthlyBudget: 50000,
+    budgets: {
+      travel: 5000, food: 8000, groceries: 6000, clothes: 3000,
+      rent: 15000, bills: 4000, luxuries: 3000, investments: 10000,
+      health: 2000, education: 2000, other: 2000
+    }
+  };
+
+  var usingSample = !(window.EXPENSE_DATA && window.EXPENSE_DATA.length);
+  var DATA = usingSample ? SAMPLE : window.EXPENSE_DATA;
+  var CONFIG = (window.EXPENSE_CONFIG && window.EXPENSE_CONFIG.monthlyBudget != null)
+    ? window.EXPENSE_CONFIG
+    : SAMPLE_CONFIG;
+  var CUR = CONFIG.currency || "₹";
+  var BUDGET = Number(CONFIG.monthlyBudget) || 0;
+  var CAT_BUDGETS = CONFIG.budgets || {};
+
+  /* ── Indian currency format ── */
+  function inr(n, withCur) {
+    n = Number(n) || 0;
+    var neg = n < 0;
+    n = Math.abs(n);
+    var whole = Math.floor(n);
+    var frac = Math.round((n - whole) * 100);
+    var s = String(whole);
+    var g;
+    if (s.length <= 3) {
+      g = s;
+    } else {
+      var last3 = s.slice(-3);
+      var rest = s.slice(0, -3);
+      var parts = [];
+      while (rest.length > 0) {
+        parts.unshift(rest.slice(-2));
+        rest = rest.slice(0, -2);
+      }
+      g = parts.join(",") + "," + last3;
+    }
+    var out = (withCur !== false ? CUR : "") + g;
+    if (frac > 0) out += "." + (frac < 10 ? "0" : "") + frac;
+    return neg ? "-" + out : out;
+  }
+
+  function daysInMonth(ym) {
+    var p = ym.split("-");
+    return new Date(Number(p[0]), Number(p[1]), 0).getDate();
+  }
+
+  function monthLabel(ym) {
+    var p = ym.split("-");
+    var names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return names[Number(p[1]) - 1] + " " + p[0];
+  }
+
+  function shiftMonth(ym, delta) {
+    var p = ym.split("-");
+    var d = new Date(Number(p[0]), Number(p[1]) - 1 + delta, 1);
+    var m = d.getMonth() + 1;
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m;
+  }
+
+  function todayStr() {
+    var d = new Date();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+
+  function currentMonth() {
+    return todayStr().slice(0, 7);
+  }
+
+  /* Collect available months from data */
+  function availableMonths() {
+    var set = {};
+    DATA.forEach(function (r) {
+      if (r.date) set[r.date.slice(0, 7)] = true;
+    });
+    set[currentMonth()] = true;
+    return Object.keys(set).sort();
+  }
+
+  var months = availableMonths();
+  var selected = usingSample ? "2026-07" : currentMonth();
+  if (months.indexOf(selected) < 0) selected = months[months.length - 1];
+
+  function expensesFor(ym) {
+    return DATA.filter(function (r) {
+      return r.type === "expense" && r.date && r.date.slice(0, 7) === ym;
+    });
+  }
+
+  function sum(rows) {
+    return rows.reduce(function (a, r) { return a + Number(r.amount); }, 0);
+  }
+
+  function byCategory(rows) {
+    var map = {};
+    rows.forEach(function (r) {
+      var c = r.category || "other";
+      map[c] = (map[c] || 0) + Number(r.amount);
+    });
+    return Object.keys(map)
+      .map(function (k) { return { category: k, amount: map[k] }; })
+      .sort(function (a, b) { return b.amount - a.amount; });
+  }
+
+  /* ── SVG helpers ── */
+  function el(tag, attrs, kids) {
+    var n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    (kids || []).forEach(function (c) {
+      if (typeof c === "string") n.appendChild(document.createTextNode(c));
+      else if (c) n.appendChild(c);
+    });
+    return n;
+  }
+
+  function renderDonut(cats, total) {
+    var svg = document.getElementById("donutSvg");
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var cx = 80, cy = 80, r = 58, stroke = 22;
+    var circ = 2 * Math.PI * r;
+
+    if (!cats.length || total <= 0) {
+      svg.appendChild(el("circle", {
+        cx: cx, cy: cy, r: r, fill: "none",
+        stroke: "#1e242c", "stroke-width": stroke
+      }));
+      document.getElementById("donutTotal").textContent = inr(0);
+      return;
+    }
+
+    // background ring
+    svg.appendChild(el("circle", {
+      cx: cx, cy: cy, r: r, fill: "none",
+      stroke: "#1e242c", "stroke-width": stroke
+    }));
+
+    var offset = 0;
+    cats.forEach(function (c) {
+      var frac = c.amount / total;
+      var len = frac * circ;
+      var color = CAT_COLORS[c.category] || CAT_COLORS.other;
+      svg.appendChild(el("circle", {
+        cx: cx, cy: cy, r: r, fill: "none",
+        stroke: color,
+        "stroke-width": stroke,
+        "stroke-dasharray": len + " " + (circ - len),
+        "stroke-dashoffset": -offset,
+        transform: "rotate(-90 " + cx + " " + cy + ")",
+        "stroke-linecap": "butt"
+      }));
+      offset += len;
+    });
+    document.getElementById("donutTotal").textContent = inr(total);
+  }
+
+  function renderLedger(cats, total) {
+    var box = document.getElementById("catLedger");
+    box.innerHTML = "";
+    if (!cats.length) {
+      box.innerHTML = '<div class="empty">No expenses this month</div>';
+      return;
+    }
+    cats.forEach(function (c) {
+      var pct = total ? (c.amount / total * 100) : 0;
+      var row = document.createElement("div");
+      row.className = "ledger-row";
+      row.innerHTML =
+        '<span class="swatch" style="background:' + (CAT_COLORS[c.category] || CAT_COLORS.other) + '"></span>' +
+        '<span class="cat">' + c.category + '</span>' +
+        '<span class="amt">' + inr(c.amount) + '</span>' +
+        '<span class="pct">' + pct.toFixed(0) + '%</span>';
+      box.appendChild(row);
+    });
+  }
+
+  function renderDailyBurn(ym, rows, budget) {
+    var box = document.getElementById("dailyChart");
+    box.innerHTML = "";
+    var W = 480, H = 200;
+    var pad = { t: 16, r: 16, b: 28, l: 48 };
+    var iw = W - pad.l - pad.r;
+    var ih = H - pad.t - pad.b;
+    var dim = daysInMonth(ym);
+    var today = todayStr();
+    var isCurrent = ym === currentMonth();
+    var lastDay = isCurrent ? Math.min(Number(today.slice(8, 10)), dim) : dim;
+
+    // cumulative by day
+    var daily = [];
+    for (var d = 1; d <= dim; d++) daily[d] = 0;
+    rows.forEach(function (r) {
+      var day = Number(r.date.slice(8, 10));
+      daily[day] = (daily[day] || 0) + Number(r.amount);
+    });
+    var cum = [0];
+    for (var i = 1; i <= dim; i++) cum[i] = cum[i - 1] + (daily[i] || 0);
+
+    var maxY = Math.max(budget || 0, cum[lastDay] || 0, 1) * 1.1;
+
+    function x(day) { return pad.l + ((day - 1) / Math.max(dim - 1, 1)) * iw; }
+    function y(v) { return pad.t + ih - (v / maxY) * ih; }
+
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img" });
+
+    // grid
+    for (var g = 0; g <= 4; g++) {
+      var gv = (maxY / 4) * g;
+      var gy = y(gv);
+      svg.appendChild(el("line", {
+        x1: pad.l, y1: gy, x2: W - pad.r, y2: gy,
+        stroke: "#1e242c", "stroke-width": 1
+      }));
+      svg.appendChild(el("text", {
+        x: pad.l - 6, y: gy + 3, fill: "#4a5564",
+        "font-size": 9, "font-family": "monospace", "text-anchor": "end"
+      }, [gv >= 1000 ? (gv / 1000).toFixed(0) + "k" : String(Math.round(gv))]));
+    }
+
+    // even-pace budget line
+    if (budget > 0) {
+      svg.appendChild(el("line", {
+        x1: x(1), y1: y(0), x2: x(dim), y2: y(budget),
+        stroke: "#a37420", "stroke-width": 1.5, "stroke-dasharray": "4 3"
+      }));
+    }
+
+    // cumulative path (up to lastDay)
+    var pts = [];
+    for (var d2 = 1; d2 <= lastDay; d2++) {
+      pts.push(x(d2) + "," + y(cum[d2]));
+    }
+    if (pts.length > 1) {
+      svg.appendChild(el("polyline", {
+        points: pts.join(" "),
+        fill: "none", stroke: "#3ecf8e", "stroke-width": 2
+      }));
+      // area fill
+      var area = pts.concat([x(lastDay) + "," + y(0), x(1) + "," + y(0)]).join(" ");
+      svg.appendChild(el("polygon", {
+        points: area, fill: "#3ecf8e", opacity: 0.08
+      }));
+    }
+
+    // day labels
+    [1, Math.round(dim / 2), dim].forEach(function (d3) {
+      svg.appendChild(el("text", {
+        x: x(d3), y: H - 8, fill: "#4a5564",
+        "font-size": 9, "font-family": "monospace", "text-anchor": "middle"
+      }, ["D" + d3]));
+    });
+
+    box.appendChild(svg);
+  }
+
+  function renderMoM(selectedYm) {
+    var box = document.getElementById("momChart");
+    box.innerHTML = "";
+    var series = [];
+    for (var i = 5; i >= 0; i--) {
+      var ym = shiftMonth(selectedYm, -i);
+      series.push({ ym: ym, total: sum(expensesFor(ym)) });
+    }
+    var W = 480, H = 200;
+    var pad = { t: 16, r: 12, b: 36, l: 48 };
+    var iw = W - pad.l - pad.r;
+    var ih = H - pad.t - pad.b;
+    var maxY = Math.max.apply(null, series.map(function (s) { return s.total; }).concat([1])) * 1.15;
+    var barW = iw / series.length * 0.55;
+    var gap = iw / series.length;
+
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H });
+
+    for (var g = 0; g <= 3; g++) {
+      var gv = (maxY / 3) * g;
+      var gy = pad.t + ih - (gv / maxY) * ih;
+      svg.appendChild(el("line", {
+        x1: pad.l, y1: gy, x2: W - pad.r, y2: gy,
+        stroke: "#1e242c", "stroke-width": 1
+      }));
+    }
+
+    series.forEach(function (s, idx) {
+      var bh = (s.total / maxY) * ih;
+      var bx = pad.l + gap * idx + (gap - barW) / 2;
+      var by = pad.t + ih - bh;
+      var active = s.ym === selectedYm;
+      svg.appendChild(el("rect", {
+        x: bx, y: by, width: barW, height: Math.max(bh, 1),
+        fill: active ? "#e8a838" : "#2a4a3a"
+      }));
+      var lbl = s.ym.slice(5);
+      svg.appendChild(el("text", {
+        x: bx + barW / 2, y: H - 18, fill: active ? "#e8a838" : "#4a5564",
+        "font-size": 10, "font-family": "monospace", "text-anchor": "middle"
+      }, [lbl]));
+      if (s.total > 0) {
+        svg.appendChild(el("text", {
+          x: bx + barW / 2, y: by - 4, fill: "#7a8494",
+          "font-size": 8, "font-family": "monospace", "text-anchor": "middle"
+        }, [s.total >= 1000 ? (s.total / 1000).toFixed(1) + "k" : String(Math.round(s.total))]));
+      }
+    });
+
+    // budget reference line
+    if (BUDGET > 0 && BUDGET <= maxY) {
+      var by2 = pad.t + ih - (BUDGET / maxY) * ih;
+      svg.appendChild(el("line", {
+        x1: pad.l, y1: by2, x2: W - pad.r, y2: by2,
+        stroke: "#a37420", "stroke-width": 1, "stroke-dasharray": "3 3"
+      }));
+    }
+
+    box.appendChild(svg);
+  }
+
+  function loanBalancesAll() {
+    var people = {};
+    DATA.forEach(function (r) {
+      var t = r.type;
+      if (t !== "lend" && t !== "borrow" && t !== "collect" && t !== "repay") return;
+      var note = (r.note || "").trim();
+      var name = (!note || note === "—") ? "Unknown" : note.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+      if (!people[name]) people[name] = { receivable: 0, payable: 0 };
+      var amt = Number(r.amount) || 0;
+      if (t === "lend") people[name].receivable += amt;
+      else if (t === "collect") people[name].receivable -= amt;
+      else if (t === "borrow") people[name].payable += amt;
+      else if (t === "repay") people[name].payable -= amt;
+    });
+    return Object.keys(people).sort().map(function (k) {
+      return { name: k, receivable: people[k].receivable, payable: people[k].payable };
+    }).filter(function (p) {
+      return Math.abs(p.receivable) > 0.01 || Math.abs(p.payable) > 0.01;
+    });
+  }
+
+  function renderLoans() {
+    var box = document.getElementById("loanList");
+    box.innerHTML = "";
+    var rows = loanBalancesAll();
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty">No open loans — text the bot:<br>lent 500 to Rahul · borrowed 2k from Amit</div>';
+      return;
+    }
+    var totalRec = 0, totalPay = 0;
+    rows.forEach(function (p) {
+      if (p.receivable > 0.01) {
+        var r1 = document.createElement("div");
+        r1.className = "loan-row";
+        r1.innerHTML = '<span class="who">' + p.name + ' owes you</span><span class="amt-rec">' + inr(p.receivable) + '</span>';
+        box.appendChild(r1);
+        totalRec += p.receivable;
+      }
+      if (p.payable > 0.01) {
+        var r2 = document.createElement("div");
+        r2.className = "loan-row";
+        r2.innerHTML = '<span class="who">You owe ' + p.name + '</span><span class="amt-pay">' + inr(p.payable) + '</span>';
+        box.appendChild(r2);
+        totalPay += p.payable;
+      }
+    });
+    var tot = document.createElement("div");
+    tot.className = "loan-totals";
+    if (totalRec > 0) tot.innerHTML += "<span>Receivable: " + inr(totalRec) + "</span>";
+    if (totalPay > 0) tot.innerHTML += "<span>Payable: " + inr(totalPay) + "</span>";
+    box.appendChild(tot);
+  }
+
+  function activitySign(r) {
+    if (r.type === "income" || r.type === "borrow" || r.type === "collect") return "+";
+    if (r.type === "lend" || r.type === "repay" || r.type === "expense") return "−";
+    return "−";
+  }
+
+  function activityAmtClass(r) {
+    if (r.type === "income") return " income";
+    if (r.type === "lend" || r.type === "borrow" || r.type === "collect" || r.type === "repay") return " loan";
+    return "";
+  }
+
+  function renderBudgets(catsMap) {
+    var box = document.getElementById("budgetList");
+    box.innerHTML = "";
+    var keys = Object.keys(CAT_BUDGETS);
+    if (!keys.length) {
+      box.innerHTML = '<div class="empty">No category budgets in config</div>';
+      return;
+    }
+    keys.forEach(function (cat) {
+      var cap = Number(CAT_BUDGETS[cat]) || 0;
+      var spent = catsMap[cat] || 0;
+      var pct = cap ? Math.min(100, (spent / cap) * 100) : 0;
+      var over = spent > cap && cap > 0;
+      var item = document.createElement("div");
+      item.className = "budget-item";
+      item.innerHTML =
+        '<div class="row"><span class="name">' + cat + '</span>' +
+        '<span class="nums' + (over ? " over" : "") + '">' +
+        inr(spent) + " / " + inr(cap) + (over ? " ⚠" : "") +
+        "</span></div>" +
+        '<div class="b-track"><div class="b-fill' + (over ? " over" : "") +
+        '" style="width:' + pct + '%"></div></div>';
+      box.appendChild(item);
+    });
+  }
+
+  function renderActivity(ym) {
+    var box = document.getElementById("activity");
+    box.innerHTML = "";
+    var rows = DATA.filter(function (r) {
+      return r.date && r.date.slice(0, 7) === ym;
+    }).slice().sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return (b.id || 0) - (a.id || 0);
+    }).slice(0, 12);
+
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty">No activity</div>';
+      return;
+    }
+    rows.forEach(function (r) {
+      var row = document.createElement("div");
+      row.className = "act-row";
+      var sign = activitySign(r);
+      var typeLbl = r.type === "expense" ? r.category : r.type;
+      row.innerHTML =
+        '<span class="d">' + r.date.slice(5) + '</span>' +
+        '<span class="cat">' + typeLbl + '</span>' +
+        '<span class="note">' + (r.note || "—") + '</span>' +
+        '<span class="amt' + activityAmtClass(r) + '">' +
+        sign + inr(r.amount) + "</span>";
+      box.appendChild(row);
+    });
+  }
+
+  function renderInsights(ym, rows, spent, cats) {
+    var box = document.getElementById("insights");
+    box.innerHTML = "";
+    var items = [];
+
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty">Log a few expenses to unlock insights</div>';
+      return;
+    }
+
+    // Biggest category + 20% off annualised
+    if (cats.length) {
+      var top = cats[0];
+      var saveYear = top.amount * 0.2 * 12;
+      items.push({
+        tag: "Biggest category",
+        text: top.category + " leads at " + inr(top.amount) + " this month. " +
+          "Cutting 20% saves about " + inr(saveYear) + " over a year."
+      });
+    }
+
+    // Discretionary load
+    var discCats = { food: 1, luxuries: 1, clothes: 1 };
+    var disc = rows.filter(function (r) { return discCats[r.category]; });
+    var discSum = sum(disc);
+    if (spent > 0) {
+      var discPct = (discSum / spent * 100).toFixed(0);
+      items.push({
+        tag: "Discretionary load",
+        text: "Food + luxuries + clothes = " + inr(discSum) +
+          " (" + discPct + "% of spend)."
+      });
+    }
+
+    // Food-order frequency
+    var foodOrders = rows.filter(function (r) {
+      var n = (r.note || "").toLowerCase();
+      return r.category === "food" && /swiggy|zomato|dominos|mcdonald|kfc|food/.test(n + " " + (r.note || ""));
+    });
+    // broader: all food category count as orders-ish
+    var foodCount = rows.filter(function (r) { return r.category === "food"; }).length;
+    if (foodCount > 0) {
+      var foodTotal = sum(rows.filter(function (r) { return r.category === "food"; }));
+      var avg = foodTotal / foodCount;
+      items.push({
+        tag: "Food frequency",
+        text: foodCount + " food entries this month averaging " +
+          inr(avg) + " each (total " + inr(foodTotal) + ")."
+      });
+    }
+
+    // Over cap
+    var overList = [];
+    Object.keys(CAT_BUDGETS).forEach(function (cat) {
+      var cap = Number(CAT_BUDGETS[cat]) || 0;
+      var s = 0;
+      cats.forEach(function (c) { if (c.category === cat) s = c.amount; });
+      if (cap > 0 && s > cap) overList.push(cat + " (+" + inr(s - cap) + ")");
+    });
+    if (overList.length) {
+      items.push({
+        tag: "Over cap",
+        text: "Crossed budget in: " + overList.join(", ") + "."
+      });
+    } else {
+      items.push({
+        tag: "Over cap",
+        text: "All category caps intact so far."
+      });
+    }
+
+    // MoM change
+    var prevYm = shiftMonth(ym, -1);
+    var prevSpent = sum(expensesFor(prevYm));
+    if (prevSpent > 0) {
+      var delta = spent - prevSpent;
+      var pct = (delta / prevSpent * 100).toFixed(0);
+      var dir = delta >= 0 ? "up" : "down";
+      items.push({
+        tag: "vs last month",
+        text: "Spend is " + dir + " " + inr(Math.abs(delta)) +
+          " (" + (delta >= 0 ? "+" : "") + pct + "%) vs " + monthLabel(prevYm) +
+          " (" + inr(prevSpent) + ")."
+      });
+    }
+
+    // Friend loans (all-time, not in monthly budget)
+    var loans = loanBalancesAll();
+    if (loans.length) {
+      var rec = 0, pay = 0;
+      loans.forEach(function (p) {
+        if (p.receivable > 0) rec += p.receivable;
+        if (p.payable > 0) pay += p.payable;
+      });
+      var parts = [];
+      if (rec > 0) parts.push(inr(rec) + " receivable from friends");
+      if (pay > 0) parts.push(inr(pay) + " you still owe");
+      items.push({ tag: "Friend ledger", text: parts.join(" · ") + "." });
+    }
+
+    // Pace vs budget
+    if (BUDGET > 0) {
+      var dim = daysInMonth(ym);
+      var isCurrent = ym === currentMonth();
+      var dayNum = isCurrent ? Number(todayStr().slice(8, 10)) : dim;
+      var projected = dayNum > 0 ? (spent / dayNum) * dim : spent;
+      if (projected <= BUDGET) {
+        items.push({
+          tag: "Pace check",
+          text: "On pace to land near " + inr(projected) +
+            " — under the " + inr(BUDGET) + " budget by " +
+            inr(BUDGET - projected) + "."
+        });
+      } else {
+        items.push({
+          tag: "Pace check",
+          text: "Current pace projects " + inr(projected) +
+            " by month-end, " + inr(projected - BUDGET) + " over budget."
+        });
+      }
+    }
+
+    items.forEach(function (it) {
+      var d = document.createElement("div");
+      d.className = "insight";
+      d.innerHTML = '<span class="tag">' + it.tag + '</span>' + it.text;
+      box.appendChild(d);
+    });
+  }
+
+  function render() {
+    document.getElementById("monthLabel").textContent = monthLabel(selected);
+    var rows = expensesFor(selected);
+    var spent = sum(rows);
+    var cats = byCategory(rows);
+    var catsMap = {};
+    cats.forEach(function (c) { catsMap[c.category] = c.amount; });
+
+    var remain = BUDGET - spent;
+    var pct = BUDGET ? (spent / BUDGET * 100) : 0;
+    var dim = daysInMonth(selected);
+    var isCurrent = selected === currentMonth();
+    var dayNum = isCurrent ? Number(todayStr().slice(8, 10)) : dim;
+    var projected = dayNum > 0 ? (spent / dayNum) * dim : spent;
+
+    var spentEl = document.getElementById("spentVal");
+    spentEl.textContent = inr(spent);
+    spentEl.className = "val" + (spent > BUDGET ? " warn" : "");
+    document.getElementById("spentHint").textContent =
+      "of " + inr(BUDGET) + "  ·  " + pct.toFixed(0) + "%";
+
+    var remEl = document.getElementById("remainVal");
+    remEl.textContent = inr(remain);
+    remEl.className = "val" + (remain < 0 ? " warn" : " ok");
+    document.getElementById("remainHint").textContent =
+      remain >= 0 ? "headroom left" : "over budget";
+
+    var projEl = document.getElementById("projVal");
+    projEl.textContent = inr(projected);
+    projEl.className = "val" + (projected > BUDGET ? " warn" : " ok");
+    document.getElementById("projHint").textContent =
+      isCurrent ? "at current daily pace" : "full-month actual";
+
+    var fill = document.getElementById("burnFill");
+    fill.style.width = Math.min(100, pct) + "%";
+    fill.className = "burn-fill" + (pct > 100 ? " over" : "");
+    document.getElementById("burnLeft").textContent = pct.toFixed(0) + "% used";
+    document.getElementById("burnRight").textContent = inr(BUDGET) + " budget";
+    document.getElementById("paceSub").textContent =
+      dayNum + " / " + dim + " days";
+
+    renderDonut(cats, spent);
+    renderLedger(cats, spent);
+    renderDailyBurn(selected, rows, BUDGET);
+    renderMoM(selected);
+    renderBudgets(catsMap);
+    renderLoans();
+    renderActivity(selected);
+    renderInsights(selected, rows, spent, cats);
+
+    document.getElementById("footerNote").innerHTML = usingSample
+      ? '<span class="sample-badge">SHOWING SAMPLE DATA · run the bot to replace</span>'
+      : (DATA.length + " transactions loaded");
+  }
+
+  document.getElementById("prevMonth").addEventListener("click", function () {
+    selected = shiftMonth(selected, -1);
+    render();
+  });
+  document.getElementById("nextMonth").addEventListener("click", function () {
+    selected = shiftMonth(selected, 1);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
