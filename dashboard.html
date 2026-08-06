@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EXPENSE LEDGER</title>
 <script>
-  document.write('<script src="data.js?v=' + Date.now() + '"><\/script>');
+  window.__DASHBOARD_DATA_VERSION__ = Date.now();
+  var script = document.createElement('script');
+  script.src = 'data.js?v=' + window.__DASHBOARD_DATA_VERSION__;
+  script.onload = function () {
+    window.dispatchEvent(new Event('dashboard:data-ready'));
+  };
+  document.head.appendChild(script);
 </script>
 <style>
   :root {
@@ -586,14 +592,28 @@
     }
   };
 
-  var usingSample = !(window.EXPENSE_DATA && window.EXPENSE_DATA.length);
-  if (usingSample) {
-    console.log('No EXPENSE_DATA loaded; using sample data.');
+  function applyConfig() {
+    var init = initData();
+    usingSample = init.usingSample;
+    DATA = init.data;
+    CONFIG = init.config;
+    CUR = CONFIG.currency || "₹";
+    BUDGET = Number(CONFIG.monthlyBudget) || 0;
+    CAT_BUDGETS = CONFIG.budgets || {};
   }
-  var DATA = usingSample ? SAMPLE : window.EXPENSE_DATA;
-  var CONFIG = (window.EXPENSE_CONFIG && window.EXPENSE_CONFIG.monthlyBudget != null)
-    ? window.EXPENSE_CONFIG
-    : SAMPLE_CONFIG;
+
+  function initData() {
+    var sampleMode = !(window.EXPENSE_DATA && window.EXPENSE_DATA.length);
+    var data = sampleMode ? SAMPLE : window.EXPENSE_DATA;
+    var config = (window.EXPENSE_CONFIG && window.EXPENSE_CONFIG.monthlyBudget != null)
+      ? window.EXPENSE_CONFIG
+      : SAMPLE_CONFIG;
+    return { usingSample: sampleMode, data: data, config: config };
+  }
+
+  var usingSample = true;
+  var DATA = SAMPLE;
+  var CONFIG = SAMPLE_CONFIG;
   var CUR = CONFIG.currency || "₹";
   var BUDGET = Number(CONFIG.monthlyBudget) || 0;
   var CAT_BUDGETS = CONFIG.budgets || {};
@@ -663,9 +683,16 @@
     return Object.keys(set).sort();
   }
 
-  var months = availableMonths();
-  var selected = usingSample ? "2026-07" : currentMonth();
-  if (months.indexOf(selected) < 0) selected = months[months.length - 1];
+  var months = [];
+  var selected = currentMonth();
+
+  function initDashboard() {
+    applyConfig();
+    months = availableMonths();
+    selected = usingSample ? "2026-07" : currentMonth();
+    if (months.indexOf(selected) < 0) selected = months[months.length - 1];
+    render();
+  }
 
   function expensesFor(ym) {
     return DATA.filter(function (r) {
@@ -1213,7 +1240,11 @@
     render();
   });
 
-  render();
+  if (window.EXPENSE_DATA || window.EXPENSE_CONFIG) {
+    initDashboard();
+  } else {
+    window.addEventListener('dashboard:data-ready', initDashboard);
+  }
 })();
 </script>
 </body>
