@@ -1,6 +1,6 @@
 {
   "telegram_token": "YOUR_BOT_TOKEN_HERE",
-  "dashboard_url": "https://your-project.vercel.app",
+  "dashboard_url": "https://expense-tracker-delta-livid-63.vercel.app",
   "github_sync": true,
   "currency": "₹",
   "monthlyBudget": 50000,
