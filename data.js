@@ -23,14 +23,6 @@ window.EXPENSE_DATA = [
     "amount": 1850.0,
     "note": "Sukhada",
     "type": "lend"
-  },
-  {
-    "id": 16,
-    "date": "2026-08-07",
-    "category": "other",
-    "amount": 300.0,
-    "note": "luxuries",
-    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
