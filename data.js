@@ -7,6 +7,14 @@ window.EXPENSE_DATA = [
     "amount": 29000.0,
     "note": "Rent",
     "type": "expense"
+  },
+  {
+    "id": 14,
+    "date": "2026-08-07",
+    "category": "other",
+    "amount": 880.0,
+    "note": "Other",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
