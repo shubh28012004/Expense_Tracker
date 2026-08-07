@@ -39,14 +39,6 @@ window.EXPENSE_DATA = [
     "amount": 100.0,
     "note": "Google one subscription",
     "type": "expense"
-  },
-  {
-    "id": 19,
-    "date": "2026-08-07",
-    "category": "loans",
-    "amount": 600.0,
-    "note": "Tanishka",
-    "type": "lend"
   }
 ];
 window.EXPENSE_CONFIG = {
