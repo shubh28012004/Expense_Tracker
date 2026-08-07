@@ -31,6 +31,14 @@ window.EXPENSE_DATA = [
     "amount": 300.0,
     "note": "spotify subscription",
     "type": "expense"
+  },
+  {
+    "id": 18,
+    "date": "2026-08-07",
+    "category": "other",
+    "amount": 100.0,
+    "note": "Google one subscription",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
