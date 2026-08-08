@@ -79,6 +79,14 @@ window.EXPENSE_DATA = [
     "amount": 1428.0,
     "note": "Bathroom materials",
     "type": "expense"
+  },
+  {
+    "id": 26,
+    "date": "2026-08-08",
+    "category": "food",
+    "amount": 270.0,
+    "note": "food",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
