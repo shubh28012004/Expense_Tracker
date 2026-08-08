@@ -71,6 +71,14 @@ window.EXPENSE_DATA = [
     "amount": 425.0,
     "note": "Mop,utensil washer groceries",
     "type": "expense"
+  },
+  {
+    "id": 25,
+    "date": "2026-08-08",
+    "category": "other",
+    "amount": 1428.0,
+    "note": "Bathroom materials",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
