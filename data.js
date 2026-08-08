@@ -63,6 +63,14 @@ window.EXPENSE_DATA = [
     "amount": 60.0,
     "note": "milk",
     "type": "expense"
+  },
+  {
+    "id": 24,
+    "date": "2026-08-08",
+    "category": "groceries",
+    "amount": 425.0,
+    "note": "Mop,utensil washer groceries",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
