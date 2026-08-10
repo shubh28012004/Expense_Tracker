@@ -127,6 +127,14 @@ window.EXPENSE_DATA = [
     "amount": 1672.0,
     "note": "groceries",
     "type": "expense"
+  },
+  {
+    "id": 32,
+    "date": "2026-08-10",
+    "category": "food",
+    "amount": 50.0,
+    "note": "food",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
