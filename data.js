@@ -159,6 +159,14 @@ window.EXPENSE_DATA = [
     "amount": 6000.0,
     "note": "investment",
     "type": "expense"
+  },
+  {
+    "id": 36,
+    "date": "2026-08-11",
+    "category": "bills",
+    "amount": 1100.0,
+    "note": "bill",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
