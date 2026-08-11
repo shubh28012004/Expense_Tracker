@@ -143,6 +143,14 @@ window.EXPENSE_DATA = [
     "amount": 4686.0,
     "note": "Credit Card Bill",
     "type": "expense"
+  },
+  {
+    "id": 34,
+    "date": "2026-08-11",
+    "category": "luxuries",
+    "amount": 760.0,
+    "note": "gym shopping",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
