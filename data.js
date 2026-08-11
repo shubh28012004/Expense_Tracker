@@ -151,6 +151,14 @@ window.EXPENSE_DATA = [
     "amount": 760.0,
     "note": "gym shopping",
     "type": "expense"
+  },
+  {
+    "id": 35,
+    "date": "2026-08-11",
+    "category": "investments",
+    "amount": 6000.0,
+    "note": "investment",
+    "type": "expense"
   }
 ];
 window.EXPENSE_CONFIG = {
